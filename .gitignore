@@ -1,0 +1,5 @@
+# ignore the build folder
+bin
+
+# ignore macOS files
+.DS_Store
