@@ -1,3 +1,4 @@
+```
                             _ 
   __ _ _ __ ___   __ _ _ __| |
  / _` | '_ ` _ \ / _` | '__| |
@@ -6,6 +7,7 @@
  |___/           |___/        
  
  g   a   m   e   g   i   r   l
+```
 
 # gmgrl
 gmgrl (Game Girl) is a gameboy emulator written in C
@@ -41,6 +43,7 @@ use the meta build program to build gmgrl
 ## run
 run gmgrl
 - `./bin/gmgrl`
+
 if you aren't making changes to the build program you can also run the build program with the `--run` flag
 *for most development, this will be the canonical way to run the build program once it's been built*
 - `./bin/build --run`
