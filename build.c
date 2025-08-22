@@ -5,8 +5,8 @@
 // The meta build program for gmgrl
 
 // gmgrl
-#include "trace.h"
-#include "types.h"
+#include "src/trace.h"
+#include "src/types.h"
 
 // std
 #include <stdlib.h>
@@ -29,7 +29,7 @@ i32 main(i32 arg_count, char* args[]) {
     }
 
 
-    i32 result = system("cc main.c -o bin/gmgrl");
+    i32 result = system("cc src/main.c -o bin/gmgrl");
     if(result != 0) {
         trace_err("build: failed");
         return 1;
