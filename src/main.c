@@ -6,38 +6,43 @@
 
 // gmgrl
 #include "gmgrl.h"
-
+#include "rom.h"
 #include "trace.h"
 #include "types.h"
 
-i32 main() {
+// std
+#include <string.h>
+
+i32 main(i32 arg_count, char *args[]) {
     trace_out("gmgrl: starting");
 
-    registers regs = {0};
-    regs.af = 0x0123;
-    regs.bc = 0x4567;
-    regs.de = 0x89AB;
-    regs.hl = 0xCDEF;
-    regs.sp = 0xF000;
-    regs.pc = 0x1000;
+    const char *rom_path = NULL;
 
-    trace_out("regs: af: %04X bc: %04X de: %04X hl: %04X sp: %04X pc: %04X", regs.af, regs.bc, regs.de, regs.hl, regs.sp, regs.pc);
-    trace_out("regs: a: %02X b: %02X c: %02X d: %02X e: %02X h: %02X l: %02X", regs.a, regs.b, regs.c, regs.d, regs.e, regs.h, regs.l);
+    if (arg_count > 1) {
+        for (i32 i = 1; i < arg_count; i++) {
+            if (strlen(args[i]) <= 0) continue;
 
-    u8 value = 0x0000;
-    trace_out("regs: checking bit: %u", check_bit(value, 0));
-    trace_out("regs: checking bit: %u", check_bit(value, 1));
-    trace_out("regs: checking bit: %u", check_bit(value, 2));
-    trace_out("regs: checking bit: %u", check_bit(value, 3));
-    trace_out("regs: checking bit: %u", check_bit(value, 4));
-    trace_out("regs: checking bit: %u", check_bit(value, 5));
-    trace_out("regs: checking bit: %u", check_bit(value, 6));
-    trace_out("regs: checking bit: %u", check_bit(value, 7));
+            if (args[i][0] == '-') {
+                if (strcmp(args[i], "-h") == 0 || strcmp(args[i], "--help") == 0) {
+                    trace_out("gmgrl: usage: gmgrl [rom path]");
+                    return 0;
+                }
+            } else {
+                rom_path = args[i];
+            }
+        }
+    }
 
-
-    value = set_bit(value, 7);
-    trace_out("regs: set bit: %u", value);
-    trace_out("regs: checking bit: %u", (bool)check_bit(value, 7));
+    if (!rom_path) {
+        trace_err("gmgrl: no rom path specified");
+        return 1;
+    }
+ 
+    rom loaded_rom;
+    if (!rom_try_load(rom_path, &loaded_rom)) {
+        trace_err("gmgrl: failed to load rom");
+        return 1;
+    }
 
     trace_out("gmgrl: done");
     return 0;
