@@ -57,4 +57,10 @@ static void mem_free(void* ptr) {
 #define f64 double
 // end type aliases
 
+// type helpers
+#define check_bit(value, bit) ((value) & (1 << (bit)))
+#define set_bit(value, bit) ((value) | (1 << (bit)))
+#define clear_bit(value, bit) ((value) & ~(1 << (bit)))
+// end type helpers
+
 #endif /* gmgrl_types_h */
