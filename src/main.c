@@ -54,7 +54,6 @@ i32 main(i32 arg_count, char *args[]) {
 
         i32 logo_start = 0x0104;
         i32 logo_end   = 0x0133;
-        i32 logo_len   = logo_end - logo_start;
         
         for (i32 i = logo_start; i < logo_end; i++) {
             if (loaded_rom.data[i] != expexted_nintendo_logo[i - logo_start]) {
