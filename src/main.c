@@ -44,6 +44,28 @@ i32 main(i32 arg_count, char *args[]) {
         return 1;
     }
 
+    // Nintendo logo assertion
+    {
+        byte expexted_nintendo_logo[] = {
+            0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+            0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
+            0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E
+        };
+
+        i32 logo_start = 0x0104;
+        i32 logo_end   = 0x0133;
+        i32 logo_len   = logo_end - logo_start;
+        
+        for (i32 i = logo_start; i < logo_end; i++) {
+            if (loaded_rom.data[i] != expexted_nintendo_logo[i - logo_start]) {
+                trace_err("gmgrl: invalid nintendo logo at %i. expected 0x%02X, got 0x%02X", i, expexted_nintendo_logo[i - logo_start], loaded_rom.data[i]);
+                return 1;
+            }
+        }
+
+        trace_out("gmgrl: valid nintendo logo");
+    }
+
     trace_out("gmgrl: done");
     return 0;
 }
