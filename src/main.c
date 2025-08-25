@@ -60,7 +60,6 @@ i32 main(i32 arg_count, char *args[]) {
     string manufacturer_code;
     if(!rom_get_manufacturer_code(&loaded_rom, &manufacturer_code)) {
         trace_out("gmgrl: failed to get rom manufacturer code");
-        return 1;
     }
 
     enum CGM_FLAGS cgm_flags;
