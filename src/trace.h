@@ -20,4 +20,7 @@
     fprintf(stderr, "\n"); \
 } while (0)
 
+#define trace_char(c) do { \
+    fprintf(stdout, "%c", c); \
+} while (0)
 #endif /* gmgrl_trace_h */
