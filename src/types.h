@@ -61,6 +61,9 @@ static void mem_free(void* ptr) {
 #define check_bit(value, bit) ((value) & (1 << (bit)))
 #define set_bit(value, bit) ((value) | (1 << (bit)))
 #define clear_bit(value, bit) ((value) & ~(1 << (bit)))
+
+#define get_msb_nibble(value) ((value) >> 4)
+#define get_lsb_nibble(value) ((value) & 0x0F)
 // end type helpers
 
 #endif /* gmgrl_types_h */
