@@ -7,6 +7,7 @@
 // gmgrl
 #include "gmgrl.h"
 #include "rom.h"
+#include "strings.h"
 #include "trace.h"
 #include "types.h"
 
@@ -47,6 +48,24 @@ i32 main(i32 arg_count, char *args[]) {
     trace_out("gmgrl: asserting nintendo logo");
     if(!assert_nintendo_logo(&loaded_rom)) {
         trace_err("gmgrl: failed to assert nintendo logo");
+        return 1;
+    }
+
+    string title;
+    if(!get_rom_title(&loaded_rom, &title)) {
+        trace_err("gmgrl: failed to get rom title");
+        return 1;
+    }
+
+    string manufacturer_code;
+    if(!get_rom_manufacturer_code(&loaded_rom, &manufacturer_code)) {
+        trace_err("gmgrl: failed to get rom manufacturer code");
+        return 1;
+    }
+
+    enum CGM_FLAGS cgm_flags;
+    if(!get_rom_cgm_flags(&loaded_rom, &cgm_flags)) {
+        trace_err("gmgrl: failed to get rom cgm flags");
         return 1;
     }
 

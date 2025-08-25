@@ -7,8 +7,9 @@
 #ifndef gmgrl_h
 #define gmgrl_h
 
-#include "types.h"
 #include "rom.h"
+#include "strings.h"
+#include "types.h"
 
 // The CPU registers
 //
@@ -64,5 +65,15 @@ typedef struct {
 } registers;
 
 bool assert_nintendo_logo(rom* rom);
+
+bool get_rom_title(rom* rom, string* out);
+bool get_rom_manufacturer_code(rom* rom, string* out);
+
+enum CGM_FLAGS {
+    CGM_SUPPORTED = 0,
+    GGM_ONLY = 1,
+};
+
+bool get_rom_cgm_flags(rom* rom, enum CGM_FLAGS *out);
 
 #endif /* gmgrl_h */

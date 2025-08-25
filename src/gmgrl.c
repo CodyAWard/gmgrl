@@ -101,4 +101,63 @@ bool assert_nintendo_logo(rom* rom) {
     return true;
 }
 
+bool get_rom_title(rom* rom, string* out) {
+    trace_out("get_rom_title");
+    
 
+    // The title is contained between the bytes $0134-$0143
+    i32 title_start = 0x0134;
+    i32 title_end   = 0x0143;
+    i32 title_size  = title_end - title_start;
+    
+    out = string_new(title_size);
+    for (i32 i = title_start; i < title_end; i++) {
+        out->data[i - title_start] = rom->data[i];
+    }
+
+    trace_out("get_rom_title success: %s", out->data);
+    return true;
+}
+
+bool get_rom_manufacturer_code(rom* rom, string* out) {
+    trace_out("get_rom_manufacturer_code");
+    
+    // The manufacturer code is contained between the bytes $0144-$0145
+    i32 manufacturer_start = 0x013f;
+    i32 manufacturer_end   = 0x0142;
+    i32 manufacturer_size  = manufacturer_end - manufacturer_start;
+    
+    out = string_new(manufacturer_size);
+    for (i32 i = manufacturer_start; i < manufacturer_end; i++) {
+        out->data[i - manufacturer_start] = rom->data[i];
+    }
+
+    if(out->data[0] <= 0) {
+        trace_err("get_rom_manufacturer_code failed: invalid manufacturer code");
+        return false;
+    }
+
+    trace_out("get_rom_manufacturer_code success: %s", out->data);
+    return true;
+}
+
+bool get_rom_cgm_flags(rom* rom, enum CGM_FLAGS *out) {
+    trace_out("get_rom_cgm_flags");
+
+    i32 flag_index = 0x0143;
+    if (rom->data[flag_index] == 0x80) {
+        *out = CGM_SUPPORTED;
+        trace_out("get_rom_cgm_flags success: CGM_SUPPORTED");
+        return true;
+    }
+
+    if (rom->data[flag_index] == 0xC0) {
+        *out = GGM_ONLY;
+        trace_out("get_rom_cgm_flags success: GGM_ONLY");
+        return true;
+    }
+
+    trace_err("get_rom_cgm_flags failed: invalid flag value: %02X", rom->data[flag_index]);
+
+    return false;
+}
