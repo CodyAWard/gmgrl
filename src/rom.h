@@ -62,7 +62,7 @@ enum CART_TYPE {
     HUC1_RAM_BATTERY,
 };
 
-bool rom_getcart_type(rom* rom, enum CART_TYPE *out);
+bool rom_get_cart_type(rom* rom, enum CART_TYPE *out);
 
 
 #endif /* gmgrl_rom_h */

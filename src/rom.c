@@ -196,3 +196,45 @@ bool rom_get_cgm_flags(rom* rom, enum CGM_FLAGS *out) {
 
     return false;
 }
+
+bool rom_get_cart_type(rom* rom, enum CART_TYPE *out) {
+    trace_out("get_rom_cart_type");
+    
+    i32 cart_type_start = 0x0147;
+    
+    byte cart_type = rom->data[cart_type_start];
+
+    switch (cart_type) {
+         case 0x00: *out = ROM_ONLY;                         break;
+         case 0x01: *out = MBC1;                             break;
+         case 0x02: *out = MBC1_RAM;                         break;
+         case 0x03: *out = MBC1_RAM_BATTERY;                 break;
+         case 0x05: *out = MBC2;                             break;
+         case 0x06: *out = MBC2_BATTERY;                     break;
+         case 0x08: *out = ROM_RAM_9;                        break;
+         case 0x09: *out = ROM_RAM_BATTERY_9;                break;
+         case 0x0B: *out = MMM01;                            break;
+         case 0x0C: *out = MMM01_RAM;                        break;
+         case 0x0D: *out = MMM01_RAM_BATTERY;                break; 
+         case 0x0F: *out = MBC3_TIMER_BATTERY;               break;
+         case 0x10: *out = MBC3_TIMER_RAM_BATTERY_10;        break;
+         case 0x11: *out = MBC3;                             break;
+         case 0x12: *out = MBC3_RAM_10;                      break;
+         case 0x13: *out = MBC3_RAM_BATTERY_10;              break;
+         case 0x19: *out = MBC5;                             break;
+         case 0x1A: *out = MBC5_RAM;                         break;
+         case 0x1B: *out = MBC5_RAM_BATTERY;                 break;
+         case 0x1C: *out = MBC5_RUMBLE;                      break;
+         case 0x1D: *out = MBC5_RUMBLE_RAM;                  break;
+         case 0x1E: *out = MBC5_RUMBLE_RAM_BATTERY;          break;
+         case 0x20: *out = MBC6;                             break;
+         case 0x22: *out = MBC7_SENSOR_RUMBLE_RAM_BATTERY;   break;
+         case 0xFC: *out = POCKET_CAMERA;                    break;
+         case 0xFD: *out = BANDAI_TAMA5;                     break;
+         case 0xFE: *out = HUC3;                             break;
+         case 0xFF: *out = HUC1_RAM_BATTERY;                 break;
+    }
+
+    trace_out("get_rom_cart_type success: %02X", *out);
+    return true;
+}

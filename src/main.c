@@ -67,6 +67,12 @@ i32 main(i32 arg_count, char *args[]) {
         trace_out("gmgrl: failed to get rom cgm flags");
     }
 
+    enum CART_TYPE cart_type;
+    if(!rom_get_cart_type(&loaded_rom, &cart_type)) {
+        trace_out("gmgrl: failed to get rom cart type");
+    }
+
+
     trace_out("gmgrl: done");
     return 0;
 }
