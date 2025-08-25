@@ -8,6 +8,7 @@
 #define gmgrl_h
 
 #include "types.h"
+#include "rom.h"
 
 // The CPU registers
 //
@@ -61,5 +62,7 @@ typedef struct {
 	u16 sp; // The stack pointer
 	u16 pc; // The program counter
 } registers;
+
+bool assert_nintendo_logo(rom* rom);
 
 #endif /* gmgrl_h */
