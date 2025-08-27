@@ -7,6 +7,7 @@
 #ifndef gmgrl_h
 #define gmgrl_h
 
+#include "rom.h"
 #include "types.h"
 
 // The CPU registers
@@ -61,4 +62,23 @@ typedef struct {
 	u16 sp; // The stack pointer
 	u16 pc; // The program counter
 } registers;
+
+typedef struct {
+    registers regs;
+    u16 pc;
+    u8 memory[0xFFFF];
+} cpu;
+
+cpu* cpu_new();
+bool cpu_step(cpu *cpu, rom *rom);
+
+u8 cpu_get_u8(cpu *cpu, rom *rom);
+u16 cpu_get_u16(cpu *cpu, rom *rom);
+
+void cpu_print(cpu *cpu);
+
+void cpu_set_flag_z(cpu *cpu, bool value);
+void cpu_set_flag_n(cpu *cpu, bool value);
+void cpu_set_flag_h(cpu *cpu, bool value);
+void cpu_set_flag_c(cpu *cpu, bool value);
 #endif /* gmgrl_h */
