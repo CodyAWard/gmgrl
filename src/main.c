@@ -96,8 +96,14 @@ i32 main(i32 arg_count, char *args[]) {
 
         char c;
         while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
-            if (c == ' ' || c == 'n') {
+            if (c == ' ' || c == 'n') { // step forward one instruction
                 cpu_step(cpu, &loaded_rom);
+                cpu_print(cpu);
+            } else if (c == 'c') { // continue until the next stop
+                while (cpu_step(cpu, &loaded_rom)) {
+                    cpu_print(cpu);
+                }
+                // print the current state after a stop
                 cpu_print(cpu);
             }
         }
