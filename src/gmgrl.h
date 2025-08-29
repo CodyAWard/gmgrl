@@ -67,12 +67,14 @@ typedef struct {
     registers regs;
     u16 pc;
     u8 memory[0xFFFF];
+    bool ime;
 } cpu;
 
 cpu* cpu_new();
 bool cpu_step(cpu *cpu, rom *rom);
 
 u8 cpu_get_u8(cpu *cpu, rom *rom);
+i8 cpu_get_i8(cpu *cpu, rom *rom);
 u16 cpu_get_u16(cpu *cpu, rom *rom);
 
 void cpu_print(cpu *cpu);
@@ -81,4 +83,9 @@ void cpu_set_flag_z(cpu *cpu, bool value);
 void cpu_set_flag_n(cpu *cpu, bool value);
 void cpu_set_flag_h(cpu *cpu, bool value);
 void cpu_set_flag_c(cpu *cpu, bool value);
+
+bool cpu_get_flag_z(cpu *cpu);
+bool cpu_get_flag_n(cpu *cpu);
+bool cpu_get_flag_h(cpu *cpu);
+bool cpu_get_flag_c(cpu *cpu);
 #endif /* gmgrl_h */
