@@ -129,17 +129,29 @@ bool cpu_step(cpu *cpu, rom *rom) {
         return true;
     }
 
-    if (op_code == 0xE0) { // LDH (U8) A
+    if (op_code == 0xE0) { // LDH U8 A
         u8 n8 = cpu_get_u8(cpu, rom);
-        trace_out("    ldh (u8) a: %02X", n8);
+        trace_out("    ldh u8 a: %02X", n8);
         cpu->memory[0xFF00 + n8] = cpu->regs.a;
         cpu->regs.pc++;
         return true;
     }
-    if (op_code == 0xF0) { // LDH A (U8)
+    if (op_code == 0xF0) { // LDH A U8
         u8 n8 = cpu_get_u8(cpu, rom);
-        trace_out("    ldh a (u8): %02X", n8);
+        trace_out("    ldh a u8: %02X", n8);
         cpu->regs.a = cpu->memory[0xFF00 + n8];
+        cpu->regs.pc++;
+        return true;
+    }
+
+    if (op_code == 0xFE) { // CP A U8
+        u8 n8 = cpu_get_u8(cpu, rom);
+        trace_out("    cp a u8: %02X", n8);
+        u8 result = cpu->regs.a - n8;
+        cpu_set_flag_z(cpu, result == 0);
+        cpu_set_flag_n(cpu, true);
+        cpu_set_flag_h(cpu, ((cpu->regs.a & 0x0F) - (n8 & 0x0F)) & 0x10);
+        cpu_set_flag_c(cpu, n8 > cpu->regs.a);
         cpu->regs.pc++;
         return true;
     }
