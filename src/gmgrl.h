@@ -88,4 +88,16 @@ bool cpu_get_flag_z(cpu *cpu);
 bool cpu_get_flag_n(cpu *cpu);
 bool cpu_get_flag_h(cpu *cpu);
 bool cpu_get_flag_c(cpu *cpu);
+
+// screen
+typedef struct {
+    u8 pixels[160][144];
+    FILE *output;
+    string* output_path;
+} screen;
+
+screen* screen_new(const char *output_path);
+void screen_print_pixel_pair(FILE *output, u8 top, u8 bot);
+void screen_print(screen *screen);
+void screen_set_pixel(screen *screen, u8 x, u8 y, u8 color);
 #endif /* gmgrl_h */

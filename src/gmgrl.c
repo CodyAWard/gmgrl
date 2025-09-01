@@ -269,3 +269,49 @@ bool cpu_get_flag_h(cpu *cpu) {
 bool cpu_get_flag_c(cpu *cpu) {
     return check_bit(cpu->regs.f, 4);
 }
+
+// screen
+screen* screen_new(const char *output_path) {
+    screen *new = mem_alloc(sizeof(screen));
+    new->output_path = string_from_cstr(output_path);
+
+    // create the output file if it doesn't exist
+    FILE *output = fopen(new->output_path->data, "w");
+    if (!output) {
+        trace_err("gmgrl: failed to open screen output file");
+        return NULL;
+    }
+    fclose(output);
+
+    return new;
+}
+
+const char *STR_PIXEL_PAIR = "▀";
+void screen_print_pixel_pair(FILE *output, u8 top, u8 bot) {
+    fprintf(output, "\x1b[%u;%um%s\x1b[0m", top, bot, STR_PIXEL_PAIR);
+}
+
+void screen_print(screen *screen) {
+    fclose(screen->output);
+    screen->output = fopen(screen->output_path->data, "w");
+    if (!screen->output) {
+        trace_err("gmgrl: failed to open screen output file");
+        return;
+    }
+
+    u8 screen_width = 160;
+    u8 screen_height = 144;
+
+    for (u8 y = 0; y < screen_height; y+=2) {
+        for (u8 x = 0; x < screen_width; x++) {
+            screen_print_pixel_pair(screen->output, 30 + screen->pixels[x][y], 40 + screen->pixels[x][y + 1]);
+        }
+        fprintf(screen->output, "\n");
+    }
+
+    fflush(screen->output);
+}
+
+void screen_set_pixel(screen *screen, u8 x, u8 y, u8 color) {
+    screen->pixels[x][y] = color;
+}

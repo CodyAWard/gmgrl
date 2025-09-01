@@ -81,11 +81,13 @@ i32 main(i32 arg_count, char *args[]) {
     }
 
     cpu *cpu = cpu_new();
+    screen *screen = screen_new("screen.output");
 
     if (!manual_step) {
         while(cpu_step(cpu, &loaded_rom)) {
             trace_out("gmgrl: cpu stepped");
             cpu_print(cpu);
+            screen_print(screen);
         }
     } else {
         struct termios oldt, newt;
@@ -94,17 +96,22 @@ i32 main(i32 arg_count, char *args[]) {
         newt.c_lflag &= ~(ICANON | ECHO);
         tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
+        u32 pxx = 0;
+        u32 pxy = 0;
         char c;
         while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
             if (c == ' ' || c == 'n') { // step forward one instruction
                 cpu_step(cpu, &loaded_rom);
                 cpu_print(cpu);
+                screen_print(screen);
             } else if (c == 'c') { // continue until the next stop
                 while (cpu_step(cpu, &loaded_rom)) {
                     cpu_print(cpu);
+                    screen_print(screen);
                 }
                 // print the current state after a stop
                 cpu_print(cpu);
+                screen_print(screen);
             }
         }
 
