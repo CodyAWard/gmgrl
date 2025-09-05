@@ -24,4 +24,8 @@
     fprintf(stdout, "%c", c); \
 } while (0)
 
+#define trace_str(...) do { \
+    fprintf(stdout, __VA_ARGS__); \
+} while (0)
+
 #endif /* gmgrl_trace_h */
