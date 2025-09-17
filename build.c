@@ -39,15 +39,6 @@ i32 main(i32 arg_count, char* args[]) {
     
     trace_out("build: built gmgrl");
 
-    result = system("cc viewer/*.c -o bin/viewer");
-    if(result != 0) {
-        trace_err("build: failed to build viewer");
-        return 1;
-    }
-    
-    trace_out("build: built viewer");
-
-
     if(should_run) {
         // pass the args to the program
         char* concatenated_args;
