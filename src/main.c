@@ -81,13 +81,15 @@ i32 main(i32 arg_count, char *args[]) {
     }
 
     cpu *cpu = cpu_new();
-    screen *screen = screen_new("screen.output");
+    screen *screen = screen_new();
+    ppu *ppu = ppu_new();
 
     if (!manual_step) {
-        while(cpu_step(cpu, &loaded_rom)) {
-            trace_out("gmgrl: cpu stepped");
+        while(cpu_tick(cpu, &loaded_rom)) {
+            trace_out("gmgrl: cpu ticked");
             cpu_print(cpu);
-            screen_print(screen);
+
+            ppu_tick(ppu, screen, cpu->memory);
         }
     } else {
         struct termios oldt, newt;
@@ -100,18 +102,21 @@ i32 main(i32 arg_count, char *args[]) {
         u32 pxy = 0;
         char c;
         while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
-            if (c == ' ' || c == 'n') { // step forward one instruction
-                cpu_step(cpu, &loaded_rom);
+            if (c == ' ' || c == 'n') { // tick forward one instruction
+                cpu_tick(cpu, &loaded_rom);
                 cpu_print(cpu);
-                screen_print(screen);
+                
+                ppu_tick(ppu, screen, cpu->memory);
             } else if (c == 'c') { // continue until the next stop
-                while (cpu_step(cpu, &loaded_rom)) {
+                while (cpu_tick(cpu, &loaded_rom)) {
                     cpu_print(cpu);
-                    screen_print(screen);
+                    
+                    ppu_tick(ppu, screen, cpu->memory);
                 }
                 // print the current state after a stop
                 cpu_print(cpu);
-                screen_print(screen);
+                
+                ppu_tick(ppu, screen, cpu->memory);
             }
         }
 

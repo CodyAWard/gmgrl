@@ -9,6 +9,11 @@
 #include "rom.h"
 #include "trace.h"
 
+// macro wich appends a ; to the end of a switch
+// label, avoiding the issue of a declaration
+// immediately following a case statement
+#define CASE(x) case x:;
+
 cpu* cpu_new() {
     trace_out("cpu_new");
     // here we are assuming that the boot sequence executed
@@ -27,8 +32,8 @@ cpu* cpu_new() {
     return new;
 }
 
-bool cpu_step(cpu *cpu, rom *rom) {
-    trace_out("cpu_step");
+bool cpu_tick(cpu *cpu, rom *rom) {
+    trace_out("cpu_tick");
     u8 op_code = rom->data[cpu->regs.pc];
     trace_out("    %04X -> 0x%02X", cpu->regs.pc, op_code);
 
@@ -270,48 +275,221 @@ bool cpu_get_flag_c(cpu *cpu) {
     return check_bit(cpu->regs.f, 4);
 }
 
-// screen
-screen* screen_new(const char *output_path) {
-    screen *new = mem_alloc(sizeof(screen));
-    new->output_path = string_from_cstr(output_path);
-
-    // create the output file if it doesn't exist
-    FILE *output = fopen(new->output_path->data, "w");
-    if (!output) {
-        trace_err("gmgrl: failed to open screen output file");
-        return NULL;
-    }
-    fclose(output);
+// pixel fetcher
+pixel_fetcher* pixel_fetcher_new() {
+    pixel_fetcher *new = mem_alloc(sizeof(pixel_fetcher));
+    new->state = FETCHER_READ_TILE_ID;
+    new->ticks = 0;
+    new->fifo = fifo_u8_new(16);
 
     return new;
 }
 
-const char *STR_PIXEL_PAIR = "▀";
-void screen_print_pixel_pair(FILE *output, u8 top, u8 bot) {
-    fprintf(output, "\x1b[%u;%um%s\x1b[0m", top, bot, STR_PIXEL_PAIR);
+void pixel_fetcher_start(
+    pixel_fetcher* fetcher, 
+    u16 map_address, 
+    u8 tile_line) {
+    fetcher->map_address = map_address;
+    fetcher->tile_line = tile_line;
+    fetcher->state = FETCHER_READ_TILE_ID;
+    fetcher->ticks = 0;
+
+    fifo_u8_reset(fetcher->fifo);
 }
 
-void screen_print(screen *screen) {
-    fclose(screen->output);
-    screen->output = fopen(screen->output_path->data, "w");
-    if (!screen->output) {
-        trace_err("gmgrl: failed to open screen output file");
-        return;
+void pixel_fetcher_tick(pixel_fetcher* fetcher, u8* memory) {
+    fetcher->ticks++;
+    if (fetcher->ticks < 2) {
+        return; // The fetcher runs at 1/2 the rate of the PPU
     }
+    fetcher->ticks = 0; // reset every time we actually tick
 
+    switch (fetcher->state) {
+        CASE(FETCHER_READ_TILE_ID)
+            fetcher->current_tile_id = memory[
+                fetcher->map_address + fetcher->tile_line];
+            fetcher->state = FETCHER_READ_TILE_DATA_01;
+            break;
+        CASE(FETCHER_READ_TILE_DATA_01)
+            // the graphical data for a tile
+            // is 16 bytes (8 pixels per row)
+            // tile data starts at address 0x8000 
+            // so we need to compute an offset
+            u16 offset = 0x8000 + fetcher->current_tile_id * 16;
+
+            // from the starting offset, we compute the 
+            // final address to read by finding out which 
+            // of the 8-pixel rows of the tile we need
+            u16 address = offset + (u16)fetcher->tile_line * 2;
+
+            u16 data = memory[address];
+            for (u8 bit_pos = 0; bit_pos <= 7; bit_pos++) {
+                // store the first bit of pixel color in the pixel data buffer
+                fetcher->data[bit_pos] = (data >> bit_pos) & 1;
+            }
+            fetcher->state = FETCHER_READ_TILE_DATA_02;
+            break;
+        CASE(FETCHER_READ_TILE_DATA_02) {
+            // this is similar to the above state, but the address
+            // is offset by 1 to the right, reading the second byte
+            // instead of overwriting the data, we append to
+            // the data buffer
+            u16 offset = 0x8000 + fetcher->current_tile_id * 16;
+            u16 address = offset + (u16)fetcher->tile_line * 2;
+            u16 data = memory[address + 1];
+            for (u8 bit_pos = 0; bit_pos <= 7; bit_pos++) {
+                fetcher->data[bit_pos] |= ((data >> bit_pos) & 1) << 1;
+            }
+
+            fetcher->state = FETCHER_PUSH_FIFO;
+            }
+            break;
+        CASE(FETCHER_PUSH_FIFO)
+            if (fetcher->fifo->size <= 8) {
+                // Note: we are pushing in reverse order
+                for (i8 i = 7; i >= 0; i--) { 
+                    if(!fifo_u8_try_push(
+                        fetcher->fifo, 
+                        fetcher->data[i])) {
+                    exit(1);
+                        trace_err("pixel fetcher: failed to push fifo");
+                    }
+                }
+                // Advance to the next tile in the map's row.
+                fetcher->tile_line++;
+                fetcher->state = FETCHER_READ_TILE_ID;
+            }            
+            break;
+    }
+}
+
+// ppu
+ppu* ppu_new() {
+    ppu *new = mem_alloc(sizeof(ppu));
+    new->state = PPU_STATE_OAM_SEARCH;
+    new->x = 0;
+    new->y = 0;
+    new->ticks = 0;
+    new->fetcher = *pixel_fetcher_new();
+
+    return new;
+}
+
+void ppu_tick(ppu *ppu, screen *screen, u8 *memory) {
+    ppu->ticks++;
+
+    switch (ppu->state) {
+        case PPU_STATE_HBLANK:
+           // A full scanline will take 456 ticks to complete.
+           // At the end of each scanline, the PPU goes back to the
+           // initial OAM Search state. When we reach line 144
+           // (the end of the screen), we will switch back 
+           // to VBlank state instead.
+           if (ppu->ticks == 456) {
+               ppu->ticks = 0;
+               ppu->y++;
+               if (ppu->y == SCREEN_HEIGHT) {
+                   ppu->state = PPU_STATE_VBLANK;
+               } else {
+                   ppu->state = PPU_STATE_OAM_SEARCH;
+               }
+           }
+
+            screen_hblank(screen);
+           break;
+        case PPU_STATE_VBLANK:
+            // When we get to the end of the screen,
+            // we wait 10 more scanlines before starting over.
+            if (ppu->ticks == 456) {
+                ppu->ticks = 0;
+                ppu->y++;
+                if (ppu->y == SCREEN_HEIGHT + 9) { // TODO: is this right?
+                    ppu->y = 0;
+                    ppu->state = PPU_STATE_OAM_SEARCH;
+                }
+            }
+
+            screen_vblank(screen);
+            break;
+        case PPU_STATE_OAM_SEARCH:
+            // OAM (Object Attribute Memory) is a memory area
+            // that contains information about 40 sprites.
+            // Each sprite requires 2 memory reads, at a 
+            // tick each. So we require 80 ticks to read
+            // all 40 sprites.
+            if (ppu->ticks == 80) {
+                ppu->x = 0;
+                u8 tile_line = ppu->y % 8;
+                u16 tile_address = 0x9800 + (ppu->y / 8) * 32;
+                pixel_fetcher_start(&ppu->fetcher, tile_address, tile_line);
+                ppu->state = PPU_STATE_PIXEL_TRANSFER;
+            }
+            ppu->state = PPU_STATE_PIXEL_TRANSFER;
+            break;
+        case PPU_STATE_PIXEL_TRANSFER: 
+            pixel_fetcher_tick(&ppu->fetcher, memory);
+            u8 col;
+            if (fifo_u8_try_pop(ppu->fetcher.fifo, &col)) {
+                screen_write_next(screen, col);
+                ppu->x++;
+            }
+            if (ppu->x == SCREEN_WIDTH) { // Scanline is complete when we reach the end of the screen
+                ppu->state = PPU_STATE_HBLANK;
+            }
+            break;
+    }
+}
+
+// screen
+screen* screen_new() {
+    screen *new = mem_alloc(sizeof(screen));
+    return new;
+}
+
+#define SCREEN_PIXEL_PAIR(top, bot) 
+
+void screen_print(screen *screen) {
     u8 screen_width = 160;
     u8 screen_height = 144;
 
     for (u8 y = 0; y < screen_height; y+=2) {
         for (u8 x = 0; x < screen_width; x++) {
-            screen_print_pixel_pair(screen->output, 30 + screen->pixels[x][y], 40 + screen->pixels[x][y + 1]);
+            printf("\x1b[%u;%um▀\x1b[0m", 30 + screen->pixels[x][y], 40 + screen->pixels[x][y + 1]);
         }
-        fprintf(screen->output, "\n");
+        printf("\n");
     }
 
-    fflush(screen->output);
+    
+    printf("\033[2J\033[1;1H");
 }
 
 void screen_set_pixel(screen *screen, u8 x, u8 y, u8 color) {
     screen->pixels[x][y] = color;
 }
+
+void screen_write_next(screen *screen, u8 color) {
+    screen->pixels[screen->current_x][screen->current_y] = color;
+    screen->current_x++;
+    if (screen->current_x == SCREEN_WIDTH) {
+        screen->current_x = 0;
+        screen->current_y++;
+        if (screen->current_y == SCREEN_HEIGHT) {
+            screen->current_y = 0;
+        }
+    }
+}
+
+void screen_hblank(screen *screen) {
+
+    screen_print(screen);
+
+    screen->current_x = 0;
+    screen->current_y++;
+}
+
+void screen_vblank(screen *screen) {
+    screen->current_x = 0;
+    screen->current_y = 0;
+}
+
+
