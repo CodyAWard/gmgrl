@@ -8,6 +8,7 @@
 #include "gmgrl.h"
 #include "rom.h"
 #include "strings.h"
+#include "tests.h"
 #include "trace.h"
 #include "types.h"
 
@@ -20,6 +21,13 @@
 
 i32 main(i32 arg_count, char *args[]) {
     trace_out("gmgrl: starting");
+
+    trace_out("gmgrl: running tests");
+    bool tests_passed = tests_run_all();
+    if(!tests_passed) {
+        trace_err("gmgrl: tests failed");
+        return 1;
+    }
 
     const char *rom_path = NULL;
     bool manual_step = false;

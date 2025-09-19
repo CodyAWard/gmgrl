@@ -22,4 +22,5 @@ void string_free(string *str);
 bool string_equals(string *a, string *b);
 bool string_equals_cstr(string *a, const char *b);
 
+string* string_from_format(const char *format, ...);
 #endif /* gmgrl_string_h */
