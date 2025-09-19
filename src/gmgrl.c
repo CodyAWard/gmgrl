@@ -29,14 +29,17 @@ cpu* cpu_new() {
 
     new->ime = false;
 
+    new->ticks = 0;
+
     return new;
 }
 
 bool cpu_tick(cpu *cpu, rom *rom) {
-    trace_out("cpu_tick");
+    trace_out("cpu_tick %llu", cpu->ticks);
     u8 op_code = rom->data[cpu->regs.pc];
     trace_out("    %04X -> 0x%02X", cpu->regs.pc, op_code);
 
+    cpu->ticks++;
     cpu->regs.pc++;
 
     if (op_code == 0x00) { // NOP
@@ -454,7 +457,9 @@ void screen_print(screen *screen) {
 
     for (u8 y = 0; y < screen_height; y+=2) {
         for (u8 x = 0; x < screen_width; x++) {
-            printf("\x1b[%u;%um▀\x1b[0m", 30 + screen->pixels[x][y], 40 + screen->pixels[x][y + 1]);
+            u8 top = screen->pixels[x][y];
+            u8 bot = screen->pixels[x][y + 1];
+            printf("\x1b[%u;%um▀\x1b[0m", 30 + top, 40 + bot);
         }
         printf("\n");
     }

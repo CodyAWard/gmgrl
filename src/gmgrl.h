@@ -69,6 +69,7 @@ typedef struct {
     u16 pc;
     u8 memory[0xFFFF];
     bool ime;
+    u64 ticks;
 } cpu;
 
 cpu* cpu_new();
